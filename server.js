@@ -14,7 +14,7 @@ app.use(express.json());
 //   {
 //     host: 'localhost',
 //     user: 'root',
-//     password: 'neues1Iphone1',
+//     password: '',
 //     database: 'employees_db'
 //   },
 //   console.log(`Connected to the employees_db database.`)
@@ -74,7 +74,9 @@ function startPrompts(){
         })
 }
 
-const viewDepartment = function () {}
+const viewDepartment = function () {
+
+}
 
 const vieweRoles = function () {}
 
