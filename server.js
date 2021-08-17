@@ -43,33 +43,33 @@ function startPrompts(){
             const selectedOpt = data.viewOptions;
             switch(selectedOpt){
                 case "View all departments":
-                    if (addMembers === "YES, add Engineer!"){
-                        return renderEngineer();
-                }
+                    if (selectedOpt === "View all departments"){
+                        return viewDepartment();
+                    }
                 case "View all roles":
-                    if (addMembers === "YES, add Intern!"){
-                        return renderIntern();
-                }
+                    if (selectedOpt === "View all roles"){
+                        return viewRoles();
+                    }
                 case "View all employees":
-                    if (addMembers === "NO, the Team is complete!"){
-                        return writeToFile("./docs/index.html", renderHtml(teamHeader, teamMembers));
-                }
+                    if (selectedOpt === "View all employees"){
+                        return viewEmployees();
+                    }
                 case "Add a department":
-                    if (addMembers === "NO, the Team is complete!"){
-                        return writeToFile("./docs/index.html", renderHtml(teamHeader, teamMembers));
-                }
+                    if (selectedOpt === "Add a department"){
+                        return addDepartment();
+                    }
                 case "Add a role":
-                    if (addMembers === "NO, the Team is complete!"){
-                        return writeToFile("./docs/index.html", renderHtml(teamHeader, teamMembers));
-                }
+                    if (selectedOpt === "Add a role"){
+                        return addRole();
+                    }
                 case "Add an employee":
-                    if (addMembers === "NO, the Team is complete!"){
-                        return writeToFile("./docs/index.html", renderHtml(teamHeader, teamMembers));
-                }
+                    if (selectedOpt === "Add an employee"){
+                        return addEmployee();
+                    }
                 case "Update an employee role":
-                    if (addMembers === "NO, the Team is complete!"){
-                        return writeToFile("./docs/index.html", renderHtml(teamHeader, teamMembers));
-                }
+                    if (selectedOpt === "Update an employee role"){
+                        return updateRole();
+                    }
             }
         })
 }
@@ -78,7 +78,7 @@ const viewDepartment = function () {
 
 }
 
-const vieweRoles = function () {}
+const viewRoles = function () {}
 
 const viewEmployees = function () {}
 
