@@ -1,8 +1,9 @@
 const express = require('express');
+require("dotenv").config();
 const fs = require('fs');
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
-const { inherits } = require('util');
+// const { inherits } = require('util');
 
 const PORT = process.env.PORT || 3001;
 const app = express();
@@ -10,18 +11,19 @@ const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-// const db = mysql.createConnection(
-//   {
-//     host: 'localhost',
-//     user: 'root',
-//     password: '',
-//     database: 'employees_db'
-//   },
-//   console.log(`Connected to the employees_db database.`)
-// );
+const connectDb = mysql.createConnection(
+    {
+     host: process.env.DB_HOST,
+     user: process.env.DB_USER,
+     password: process.env.DB_PASSWORD,
+     database: process.env.DB_DATABASE
+   },
+   console.log(`Connected to the employees_db database.`)
+);
+
+
 
 function startPrompts(){
-    console.log("\x1b[32m", "\n========================== Welcome to the Employee's Database! ==========================\n")
         inquirer.prompt([
             {
                 type: "list",
@@ -39,7 +41,6 @@ function startPrompts(){
             }
         ])
         .then(function(data){
-            console.log("\x1b[33m", `\n------  Awesome! ------\n`);
             const selectedOpt = data.viewOptions;
             switch(selectedOpt){
                 case "View all departments":
@@ -75,14 +76,68 @@ function startPrompts(){
 }
 
 const viewDepartment = function () {
+    const sql = "SELECT * FROM department";
 
+    connectDb.query(sql, (err, result) => {
+     if (err) {
+         console.error(err)
+     } else {
+         console.table(result)
+         startPrompts();
+     }
+    });
 }
 
-const viewRoles = function () {}
+const viewRoles = function () {
+    const sql = "SELECT * FROM role";
 
-const viewEmployees = function () {}
+    connectDb.query(sql, (err, result) => {
+     if (err) {
+         console.error(err)
+     } else {
+         console.table(result)
+         startPrompts();
+     }
+    });
+}
 
-const addDepartment = function () {}
+const viewEmployees = function () {
+    const sql = "SELECT * FROM employee";
+
+    connectDb.query(sql, (err, result) => {
+     if (err) {
+         console.error(err)
+     } else {
+         console.table(result)
+         startPrompts();
+     }
+    });
+}
+
+const addDepartment = function () {
+    inquirer.prompt([
+        {
+            type: "text",
+            message: "What is the name of the department?",
+            name: "addDepartment",
+        }
+    ])
+    .then(function(data){
+        console.log(data.addDepartment)
+        const departmentInput = data.addDepartment;
+        const sql = `INSERT INTO department (department_name) VALUES (?)`
+
+        connectDb.query(sql, departmentInput, (err, result) => {
+            if (err) {
+                console.error(err)
+            } else {
+                console.log("\x1b[33m", `\n------  Database has been updated! ------\n`);
+                viewDepartment();
+            }
+           });
+
+    })
+}
 
 const addRole = function () {}
 
@@ -90,4 +145,9 @@ const addEmployee = function () {}
 
 const updateRole = function () {}
 
-startPrompts();
+const init = async () => {
+    await console.log("\x1b[32m", "\n========================== Welcome to the Employee's Database! ==========================\n");
+    startPrompts();
+}
+
+init();
