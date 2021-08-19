@@ -139,7 +139,59 @@ const addDepartment = function () {
     })
 }
 
-const addRole = function () {}
+const addRole = function () {
+    inquirer.prompt([
+        {
+            type: "text",
+            message: "What is the role title?",
+            name: "role_title",
+        },
+        {
+            type: "text",
+            message: "What is the roles salary?",
+            name: "role_salary",
+        },
+        {
+            type: "text",
+            message: "What is the roles department id?",
+            name: "role_department",
+        }
+    ])
+    .then(function(data){
+        console.log(data.role_title, data.role_salary, data.role_department) //Test 12345 1
+        // Check if department exists already
+        
+        const roleInput = [data.role_title, data.role_salary, data.role_department]
+        console.log(roleInput)//[ 'Test', '12345', '1' ]
+
+        connectDb.query("SELECT department_name FROM department", (err, result) => {
+            if (err) {
+                console.error(err)
+            } else {
+                // console.table(result)
+                return checkExistingDepartment(result);
+            }
+           });
+
+        // function checkExistingDepartment(result) {
+            
+        //     result.forEach(function(depar))
+        // }
+
+
+        // const sql = `INSERT INTO role (role_title, role_salary, department_id) VALUES (?)`
+
+        // connectDb.query(sql, [roleInput], (err, result) => {
+        //     if (err) {
+        //         console.error(err)
+        //     } else {
+        //         console.log("\x1b[33m", `\n------  Database has been updated! ------\n`);
+        //         viewRoles();
+        //     }
+        //    });
+
+    })
+}
 
 const addEmployee = function () {}
 
