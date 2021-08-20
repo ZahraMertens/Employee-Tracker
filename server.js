@@ -76,7 +76,11 @@ const viewDepartment = function () {
 }
 
 const viewRoles = function () {
-    const sql = "SELECT * FROM role";
+    //Join statement to add department_name to role table
+    const sql = `SELECT department.department_name, department.id, role.role_title, role.role_id, role.role_salary
+    FROM department
+    LEFT JOIN role
+    ON department.id = role.department_id`;
 
     connectDb.query(sql, (err, result) => {
      if (err) {
@@ -201,7 +205,7 @@ function addRoleExistingDep(roleInput){
 // }
 
 const addEmployee = async function () {
-    inquirer.prompt([
+    let addEmp = await inquirer.prompt([
         {
             type: "text",
             message: "What is the eomplyees first name?",
@@ -214,19 +218,29 @@ const addEmployee = async function () {
         },
         {
             type: "list",
+            message: "In which department is the employee going to work?",
+            name: "department", //trim value
+            choices: await roleDepartment()
+        }
+    ]);
+    addEmp = Object.assign(addEmp, await inquirer.prompt([
+        {
+            type: "list",
             message: "What is the employees role?",
             name: "role_title", //trim value
-            choices: await getRoles(updateEmp.department)
+            choices: await getRoles(addEmp.department)
         },
-        {
-            type: "text",
-            message: "Who is the employees manager?",
-            name: "role_department", //trim value
-        }
-    ])
-    .then(function(data){
-       //write query to add employee
-    })
+    ]))
+        
+    //     {
+    //         type: "text",
+    //         message: "Who is the employees manager?",
+    //         name: "role_department", //trim value
+    //     }
+    // ])
+    // .then(function(data){
+    //    //write query to add employee
+    // })
 }
 
 const updateRole = async function () {
