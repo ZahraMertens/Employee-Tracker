@@ -1,4 +1,5 @@
--- THEN I am presented with a formatted table showing employee data, 
--- including employee ids, first names, last names, job titles, 
--- departments, salaries, and managers that the employees report to
 
+SELECT role.role_title, role.role_id, employee.first_name, employee.last_name, employee.employee_id, employee.manager_id
+FROM role
+LEFT JOIN employee
+ON role.role_id = employee.role_id
