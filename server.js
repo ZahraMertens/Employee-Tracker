@@ -1,15 +1,5 @@
-const { text } = require('body-parser');
-const express = require('express');
-const fs = require('fs');
-//const mysql = require('mysql2');
 const inquirer = require('inquirer');
 const connectDb = require("./config/connection")
-
-const PORT = process.env.PORT || 3001;
-const app = express();
-
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
 
 function startPrompts(){
         inquirer.prompt([
@@ -63,6 +53,7 @@ function startPrompts(){
         })
 }
 
+//------------------ ALL VIEW FUNCTIONS TO SEE TABLE OF DEPARTMENT/ROLE/EMPLOYEE ---------//
 const viewDepartment = function () {
     const sql = "SELECT * FROM department";
 
@@ -95,6 +86,7 @@ const viewRoles = function () {
 }
 
 const viewEmployees = function () {
+    //Join statement to see relations between department, role and employee
     const sql = `SELECT 
     employee.employee_id,
     employee.first_name, 
@@ -122,6 +114,8 @@ const viewEmployees = function () {
     });
 }
 
+//------------------ ALL ADD FUNCTIONS TO ADD DEPARTMENT/ROLE/EMPLOYEE ---------//
+
 const addDepartment = function () {
     inquirer.prompt([
         {
@@ -131,18 +125,17 @@ const addDepartment = function () {
         }
     ])
     .then(function(data){
-        console.log(data.addDepartment)
-        const param = [data.addDepartment];
+        const param = data.addDepartment
         const sql = `INSERT INTO department (department_name) VALUES (?)`
 
-        connectDb.query(sql, param, (err, result) => {
+        connectDb.query(sql, [param], (err, result) => {
             if (err) {
                 console.error(err)
             } else {
-                console.log("\x1b[33m", `\n------  ${data.addDepartment} has been added to the department table ------\n`);
+                console.log("\x1b[33m", `\n------  ${param} has been added to the department table ------\n`);
                 viewDepartment();
             }
-           });
+        });
     })
 }
 
@@ -151,8 +144,8 @@ async function addRole () {
         {
             type: "list",
             message: "Which department does the role belong to?",
-            name: "department", //trim value
-            choices: await roleDepartment()
+            name: "department",
+            choices: await getDepartment()
         },
         {
             type: "input",
@@ -167,25 +160,27 @@ async function addRole () {
         }
     ])
 
-    const roleTitle = newRole.role_title;
+    // const roleTitle = newRole.role_title;
+    const sql = `INSERT INTO role SET ?`;
 
-        const sql = `INSERT INTO role SET ?`;
-
-        const params = [{
+    const params = [
+        {
             role_title: newRole.role_title, 
             role_salary: newRole.role_salary, 
             department_id: await getDepartmentId(newRole.department)
-        }]
+        }
+    ]
                 
-        connectDb.query(sql, params, (err, result) => {
-            if (err) {
-                console.error(err)
-            } else {
-                viewNewRole(newRole.role_title)
-            }
-        })
+    connectDb.query(sql, params, (err, result) => {
+        if (err) {
+            console.error(err)
+        } else {
+            viewNewRole(newRole.role_title)
+        }
+    })
 }
 
+//View new role function to only see the new role instead of the whole table
 function viewNewRole (title) {
 
     const sql = `SELECT * FROM role WHERE role_title = ?`
@@ -231,8 +226,9 @@ function viewNewRole (title) {
 //     })
 // }
 
-
+//Add new employee to employee_db 
 const addEmployee = async function () {
+    //Await first prompts to be able to look for all role titles as they depend on the department
     let addEmp = await inquirer.prompt([
         {
             type: "text",
@@ -248,7 +244,7 @@ const addEmployee = async function () {
             type: "list",
             message: "In which department is the employee going to work?",
             name: "department", //trim value
-            choices: await roleDepartment()
+            choices: await getDepartment()
         }
     ]);
 
@@ -256,81 +252,61 @@ const addEmployee = async function () {
         {
             type: "list",
             message: "What is the employees role?",
-            name: "role_title", //trim value
+            name: "role_title",
             choices: await getRoles(addEmp.department)
+        },
+        {
+            type: "list",
+			name: "manager",
+			message: "Who is the employee's current manager?",
+			choices: await getEmployees()
         }
     ]))
 
-        addEmp = Object.assign(addEmp, await inquirer.prompt([
-            {
-              type: "list",
-			  name: "manager",
-			  message: "Who is the employee's current manager?",
-			  choices: await getEmployees()
-            }
-        ]))
+    const sql = `INSERT INTO employee SET ?`
+    const params = [
+        {
+            first_name: addEmp.first_name,
+            last_name: addEmp.last_name,
+            role_id: await getRoleId(addEmp.role_title),
+            manager_id: await getManagerId(addEmp.manager)
+        }    
+    ]
 
-        const sql = `INSERT INTO employee SET ?`
-            const params = [
-                {
-                first_name: addEmp.first_name,
-                last_name: addEmp.last_name,
-                role_id: await getRoleId(addEmp.role_title),
-                manager_id: await getManagerId(addEmp.manager)
-                }    
-            ]
-
-            connectDb.query(sql, params, (err, result) => {
-                if (err){
-                    console.error(err)
-                } else {
-                    viewEmployees();
-                }
-            })
+    connectDb.query(sql, params, (err, result) => {
+        if (err){
+            console.error(err)
+        } else {
+            viewEmployees();
+        }
+    })
 
 }
 
-function getManagerId(manager) {
-	const sql = "SELECT employee_id FROM employee WHERE ? AND ?"
-	const params = [
-		{
-			first_name: manager.split(' ')[0]
-		},
-		{
-			last_name: manager.split(' ')[1]
-		}
-	];
-
-	return new Promise((resolve) => {
-		connectDb.query(sql, params, (err, result) => {
-			if (err) throw err;
-			resolve(result[0].employee_id);
-		});
-	});
-}
+//----------------- Update employee's role function ------------------------//
 
 const updateRole = async function () {
     let updateEmp = await inquirer.prompt([
 		{
-			"type": "list",
-			"name": "name",
-			"message": "Which employee would you like to update?",
-			"choices": await getEmployees()
+			type: "list",
+			name: "name",
+			message: "Which employee would you like to update?",
+			choices: await getEmployees()
 		},
 		{
-			"type": "list",
-			"name": "department",
-			"message": "In which department is the role categorised?",
-			"choices": await roleDepartment() //Use distinct to not make it repeat
+			type: "list",
+			name: "department",
+			message: "In which department is the role categorised?",
+			choices: await getDepartment()
 		}
 	]);
 
     updateEmp = Object.assign(updateEmp, await inquirer.prompt([
 		{
-			"type": "list",
-			"name": "role",
-			"message": "What is the employee's new role?",
-			"choices": await getRoles(updateEmp.department)
+			type: "list",
+			name: "role",
+			message: "What is the employee's new role?",
+			choices: await getRoles(updateEmp.department)
 		}
     ]));
 
@@ -343,10 +319,10 @@ const updateRole = async function () {
 	});
 }
 
+//Function to display table of updated employee
 function showUpdatedEmployee (name) {
 
     const params = name;
-
     const sql = 
     `SELECT role.role_title, role.role_id, employee.first_name, employee.last_name, employee.employee_id, employee.manager_id 
     FROM role 
@@ -363,7 +339,13 @@ function showUpdatedEmployee (name) {
     });
 }
 
+
+
+// --------- ALL HELPER FUNCTIONS TO GET THE DATA FROM ALL 3 TABLES FOR THE VIEW, ADD & UPDATE FUNCTIONS ------//
+
+//Get employee names for prompt choices
 function getEmployees () {
+
     const sql = "SELECT CONCAT(first_name, ' ', last_name) AS 'name' FROM employee ORDER BY employee_id, first_name;";
 
     return new Promise((resolve) => {
@@ -378,8 +360,9 @@ function getEmployees () {
     })
 }
 
-function roleDepartment () {
-    const sql = "SELECT department_name FROM department"// ORDER BY id, department_name;";
+//Get all existing departments for choices
+function getDepartment () {
+    const sql = "SELECT department_name FROM department ORDER BY id, department_name;";
 
 	return new Promise((resolve) => {
 		connectDb.query(sql, (err, result) => {
@@ -402,6 +385,27 @@ async function getRoles(department) {
 	});
 }
 
+//Get manager id to add an employee
+function getManagerId(manager) {
+	const sql = "SELECT employee_id FROM employee WHERE ? AND ?"
+	const params = [
+		{
+			first_name: manager.split(' ')[0]
+		},
+		{
+			last_name: manager.split(' ')[1]
+		}
+	];
+
+	return new Promise((resolve) => {
+		connectDb.query(sql, params, (err, result) => {
+			if (err) throw err;
+			resolve(result[0].employee_id);
+		});
+	});
+}
+
+//Get Department id 
 function getDepartmentId(department) {
 	const sql = "SELECT id FROM department WHERE department_name = ?";
 	const params = [department];
@@ -415,6 +419,7 @@ function getDepartmentId(department) {
 	});
 }
 
+//Get role id 
 function getRoleId(role) {
 	const sql = "SELECT role_id FROM role WHERE role_title = ?";
 	const param = [role];
@@ -428,7 +433,6 @@ function getRoleId(role) {
 }
 
 const init = async () => {
-
     await console.log("\x1b[32m", "\n========================== Welcome to the Employee's Database! ==========================\n");
     startPrompts();
 }
