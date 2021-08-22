@@ -1,3 +1,4 @@
+const { resolveCname } = require('dns');
 const inquirer = require('inquirer');
 const connectDb = require("./config/connection")
 
@@ -10,11 +11,19 @@ function startPrompts(){
                 choices: [
                     "View all departments",
                     "View all roles",
+                    "View all roles assigned to a department",
                     "View all employees",
+                    "View all employees assigned to a role or department",
+                    "View employees by manager",
+                    "View employees by department",
                     "Add a department",
                     "Add a role",
                     "Add an employee",
-                    "Update an employee role"
+                    "Update/Change an employee's role",
+                    "Update a roles department",
+                    "Delete a department",
+                    "Delete a role",
+                    "Delete an employee"
                 ]
             }
         ])
@@ -29,9 +38,25 @@ function startPrompts(){
                     if (selectedOpt === "View all roles"){
                         return viewRoles();
                     }
+                case "View all roles assigned to a department":
+                    if (selectedOpt === "View all roles assigned to a department"){
+                        return viewAssignedRoles();
+                    }
                 case "View all employees":
                     if (selectedOpt === "View all employees"){
                         return viewEmployees();
+                    }
+                case "View all employees assigned to a role or department":
+                    if (selectedOpt === "View all employees assigned to a role or department"){
+                        return viewAssignedEmployees();
+                    }
+                case "View employees by manager":
+                    if (selectedOpt === "View employees by manager"){
+                        return viewEmployeesByManager();
+                    }
+                case "View employees by department":
+                    if (selectedOpt === "View employees by department"){
+                        return viewEmployeesByDepartment();
                     }
                 case "Add a department":
                     if (selectedOpt === "Add a department"){
@@ -45,9 +70,25 @@ function startPrompts(){
                     if (selectedOpt === "Add an employee"){
                         return addEmployee();
                     }
-                case "Update an employee role":
-                    if (selectedOpt === "Update an employee role"){
-                        return updateRole();
+                case "Update/Change an employee's role":
+                    if (selectedOpt === "Update/Change an employee's role"){
+                        return updateRoleEmployee();
+                    }
+                case "Update a roles department":
+                    if (selectedOpt === "Update a roles department"){
+                        return updateRolesDepartment();
+                    }
+                case "Delete a department":
+                    if (selectedOpt === "Delete a department"){
+                        return deleteDepartment();
+                    }
+                case "Delete a role":
+                    if (selectedOpt === "Delete a role"){
+                        return deleteRole();
+                    }
+                case "Delete an Employee":
+                    if (selectedOpt === "Delete an Employee"){
+                        return deleteEmployee();
                     }
             }
         })
@@ -67,7 +108,20 @@ const viewDepartment = function () {
     });
 }
 
-const viewRoles = function () {
+function viewRoles (){
+    const sql = `SELECT * FROM role`;
+
+    connectDb.query(sql, (err, result) => {
+     if (err) {
+        console.error(err)
+     } else {
+        console.table(result)
+        startPrompts();
+     }
+    });
+}
+
+const viewAssignedRoles = function () {
     //Join statement to add department_name to role table
     const sql = `SELECT department.department_name, department.id, role.role_title, role.role_id, role.role_salary
     FROM department
@@ -86,6 +140,19 @@ const viewRoles = function () {
 }
 
 const viewEmployees = function () {
+    const sql = `SELECT * FROM employee`;
+
+    connectDb.query(sql, (err, result) => {
+     if (err) {
+        console.error(err)
+     } else {
+        console.table(result)
+        startPrompts();
+     }
+    });
+}
+
+const viewAssignedEmployees = function () {
     //Join statement to see relations between department, role and employee
     const sql = `SELECT 
     employee.employee_id,
@@ -114,6 +181,84 @@ const viewEmployees = function () {
     });
 }
 
+async function viewEmployeesByManager () {
+
+    let manager = await inquirer.prompt([
+        {
+            type: "list",
+			name: "name",
+			message: "Who's manager's team would you like to see?",
+			choices: await getEmployees()
+        }
+    ])
+
+    const sql = `SELECT * FROM employee WHERE manager_id = ?`
+    const params = await getManagerId(manager.name)
+
+    connectDb.query(sql, params, (err, result) => {
+        if (err){
+            console.error(err)
+        } else {
+            //console.log(result.length)
+            if (result.length == 0){
+                console.log("\x1b[31m", `\n ------- ${manager.name} is NOT the manager of anyone! -------\n`)
+                startPrompts();
+            } else {
+                console.log("\x1b[33m", `\n -------${manager.name} is the manager of following employees: -------\n`)
+                console.table(result);
+                startPrompts();
+            }
+           
+        }
+    })
+}
+
+async function viewEmployeesByDepartment () {
+
+    let department = await inquirer.prompt([
+        {
+            type: "list",
+			name: "department_name",
+			message: "Which department's employee's would you like to view?",
+			choices: await getDepartment()
+        }
+    ])
+
+    const sql = `SELECT 
+    role.role_title, 
+    role.department_id,
+    role.role_salary,
+    employee.first_name, 
+    employee.last_name, 
+    employee.employee_id, 
+    employee.manager_id,
+    department.department_name
+    FROM role
+    LEFT JOIN employee
+    ON role.role_id = employee.role_id
+    LEFT JOIN department
+    ON department.id = role.department_id
+    WHERE department.department_name = ? AND employee.first_name IS NOT NULL`
+    //As the department can be selected without having an employee we need to define employee not to be null to filter the result
+    const param = [department.department_name];
+
+    connectDb.query(sql, param, (err, result) => {
+        if (err){
+            console.error(err)
+        } else {
+            //console.log(result.length)
+            if (result.length == 0){
+                console.log("\x1b[31m", `\n ------- There are no employees assigned to the ${department.department_name} department! -------\n`)
+                startPrompts();
+            } else {
+                console.log("\x1b[33m", `\n ------- See all employees from the ${department.department_name} department below: -------\n`)
+                console.table(result);
+                startPrompts();
+            }
+        }
+    })
+}
+
 //------------------ ALL ADD FUNCTIONS TO ADD DEPARTMENT/ROLE/EMPLOYEE ---------//
 
 const addDepartment = function () {
@@ -121,7 +266,28 @@ const addDepartment = function () {
         {
             type: "text",
             message: "What is the name of the department?",
-            name: "addDepartment",
+            name: "addDepartment"//,
+            // validate: function (input) {   //other way: checkExistingDepartment
+
+            //     var done = this.async()
+
+            //     setTimeout(function() {
+
+            //         connectDb.query(`SELECT id FROM department WHERE department_name = '${input}'`, (err, result) => {
+            //             if (err){
+            //                 console.error(err)
+            //             } else {
+            //                 //console.log(result)
+            //                 //console.log(result.length)
+            //                 if (result.length !== 0){ //If the department exists result is a Row Data Obejct and....
+            //                     done('Already exists');//...If the department does not exist it is an empty array
+            //                     return;
+            //                 }
+            //             }
+            //         })
+            //         done(true);
+            //     }, 5000);
+            //}
         }
     ])
     .then(function(data){
@@ -138,6 +304,46 @@ const addDepartment = function () {
         });
     })
 }
+
+// // Check if department exists
+// async function checkExistingDepartment (input) {
+
+//     const sql = `SELECT id FROM department WHERE department_name = ?`;
+//     const param = [input]
+
+//     connectDb.query(sql, param, (err, result) => {
+//         if (err) {
+//              console.error(err)
+//         } else {
+//            //console.log(result)
+//            if (result.length !== 0){
+//                console.log("\x1b[31m", `\n\n -------${param} already exists! Please try again!-------\n`)
+//                return startPrompts()
+//             }
+//         }
+        
+//     })
+//    return true
+// }
+// async function checkExistingDepartment (input) {
+
+//     const sql = `SELECT id FROM department WHERE department_name = ?`;
+//     const param = [input]
+
+//     connectDb.query(sql, param, (err, result) => {
+//         if (err) {
+//              console.error(err)
+//         } else {
+//            //console.log(result)
+//            if (result.length !== 0){
+//                console.log("\x1b[31m", `\n\n -------${param} already exists! Please try again!-------\n`)
+//                return startPrompts();
+//             } 
+//         }
+        
+//     })
+//     return true
+// }
 
 async function addRole () {
     const newRole = await inquirer.prompt([
@@ -196,35 +402,6 @@ function viewNewRole (title) {
     })
 
 }
-
-// async function checkExistingRole (input) {
-
-//     const sql = `SELECT role_title FROM role WHERE role_title = ?`;
-//     const param = [input]
-
-//     connectDb.query(sql, param, (err, result) => {
-//         if (err) {
-//              console.error(err)
-//         } else {
-//             let emptyArray = [];
-//             console.log(result)
-//             const objRole = JSON.parse(JSON.stringify(result))
-//             console.log(objRole);
-//             const roleTitle = objRole[0].role_title
-//             //console.log(objRole[0].role_title)
-//             //console.log(input)
-
-//             if (input === roleTitle){
-//                 console.log("Already exists")
-//                 return false
-//             } else {
-//                 console.log("New Role")
-//                 return true
-//             }
-                         
-//         }
-//     })
-// }
 
 //Add new employee to employee_db 
 const addEmployee = async function () {
@@ -285,7 +462,7 @@ const addEmployee = async function () {
 
 //----------------- Update employee's role function ------------------------//
 
-const updateRole = async function () {
+const updateRoleEmployee = async function () {
     let updateEmp = await inquirer.prompt([
 		{
 			type: "list",
@@ -307,11 +484,17 @@ const updateRole = async function () {
 			name: "role",
 			message: "What is the employee's new role?",
 			choices: await getRoles(updateEmp.department)
-		}
+		},
+        {
+            type: "list",
+			name: "newManager",
+			message: "Who is the employees new Manager?",
+			choices: await getEmployees()//BONUS: UPDATE MANAGER ID OF EMPLOYEE WHEN CHANGE JOB ROLE
+        }
     ]));
 
-    const sql = "UPDATE employee SET role_id = ? WHERE CONCAT(first_name, ' ', last_name) = ?";
-	const param_array = [await getRoleId(updateEmp.role), updateEmp.name]
+    const sql = "UPDATE employee SET role_id = ?, manager_id = ? WHERE CONCAT(first_name, ' ', last_name) = ?";
+	const param_array = [await getRoleId(updateEmp.role), await getManagerId(updateEmp.newManager), updateEmp.name]
 
 	connectDb.query(sql, param_array, (err) => {
 		if (err) throw err;
@@ -339,6 +522,39 @@ function showUpdatedEmployee (name) {
     });
 }
 
+async function updateRolesDepartment () {
+    let updateRoleDep = await inquirer.prompt([
+        {
+            type: "list",
+			name: "role",
+			message: "Which role would you like to update?",
+			choices: await getRolesByName()
+        }
+    ])
+
+    upadteRoleDep = Object.assign(updateRoleDep, await inquirer.prompt ([
+        {
+            type: "list",
+			name: "newDepartment",
+			message: "Which department would you like to assign the role to?",
+			choices: await getDepartment()
+        }
+    ]))
+
+    const sql = "UPDATE role SET department_id = ? WHERE role_title = ?"
+    const params = [await getDepartmentId(updateRoleDep.newDepartment), updateRoleDep.role];
+
+    connectDb.query(sql, params, (err, result) => {
+        if (err) {
+        console.error(err)
+        } else {
+            console.log("\x1b[33m", `\nSuccess! The role ${updateRoleDep.role} is now assigned to the ${upadteRoleDep.newDepartment} department! \n`)
+            startPrompts();
+        }
+    })
+
+}
+
 
 
 // --------- ALL HELPER FUNCTIONS TO GET THE DATA FROM ALL 3 TABLES FOR THE VIEW, ADD & UPDATE FUNCTIONS ------//
@@ -360,9 +576,20 @@ function getEmployees () {
     })
 }
 
+function getRolesByName () {
+    const sql = "SELECT role_title FROM role;";
+
+    return new Promise((resolve) => {
+		connectDb.query(sql, (err, result) => {
+			if (err) console.error(err);
+			resolve(result.map(role => role.role_title));
+		});
+	});
+}
+
 //Get all existing departments for choices
 function getDepartment () {
-    const sql = "SELECT department_name FROM department ORDER BY id, department_name;";
+    const sql = "SELECT department_name FROM department";
 
 	return new Promise((resolve) => {
 		connectDb.query(sql, (err, result) => {
@@ -379,9 +606,20 @@ async function getRoles(department) {
 
 	return new Promise ((resolve) => {
 		connectDb.query(sql, params, (err, result) => {
-			if (err) throw err;
-			resolve(result.map(role => role.role_title));
+            try {
+                if (err) {
+                    throw err
+                } else if (result.length == 0) {
+                    console.log("There are no roles categorised in the department")
+                    return startPrompts();
+                } else if (result.length !== 0){
+                    resolve(result.map(role => role.role_title));
+                }
+            } catch (error){
+                console.error(error)
+            }
 		});
+       
 	});
 }
 
@@ -430,6 +668,100 @@ function getRoleId(role) {
             resolve(result[0].role_id);
 		});
 	});
+}
+
+async function deleteDepartment () {
+    
+    let deleteDep = await inquirer.prompt([
+        {
+            type: "list",
+			name: "department_name",
+			message: "Which department would you like to remove from the database?",
+			choices: await getDepartment()
+        }
+    ])
+
+    const sql = `DELETE FROM department WHERE department_name = ?`
+    const params = [deleteDep.department_name]
+
+    connectDb.query(sql, params, (err, result) => {
+        if (err){
+            console.error(err)
+        } else {
+            //console.log(result.length)
+            console.table(result)
+            startPrompts();
+           
+        }
+    })
+}
+
+async function deleteRole () {
+    
+    let deleteRole = await inquirer.prompt([
+        {
+            type: "list",
+			name: "department",
+			message: "In which department is the role you would like to delete from the database?",
+			choices: await getDepartment()
+        }
+    ]);
+
+    deleteRole = Object.assign(deleteRole, await inquirer.prompt([
+		{
+			type: "list",
+			name: "role_title",
+			message: "Which role would you like to remove from the database?",
+			choices: await getRoles(deleteRole.department)//, 
+            // validate: function (input) {
+            //     let value = this.choices.filter(undefined)
+            //     if (input == value){
+            //         return startPrompts();
+            //     } 
+            //     return true
+            // }
+		}
+    ]));
+
+    const sql = `DELETE FROM role WHERE role_title = ?`
+    const params = [deleteRole.role_title]
+
+    connectDb.query(sql, params, (err, result) => {
+        if (err){
+            console.error(err)
+        } else {
+            //console.log(result.length)
+            console.table(result)
+            startPrompts();
+           
+        }
+    })
+}
+
+async function deleteEmployee () {
+    
+    let deleteEmp = await inquirer.prompt([
+        {
+            type: "list",
+			name: "role_title",
+			message: "Which role would you like to remove from the database?",
+			choices: await getDepartment()
+        }
+    ])
+
+    const sql = `DELETE FROM role WHERE role_title = ?`
+    const params = [deleteRole.role_title]
+
+    connectDb.query(sql, params, (err, result) => {
+        if (err){
+            console.error(err)
+        } else {
+            //console.log(result.length)
+            console.table(result)
+            startPrompts();
+           
+        }
+    })
 }
 
 const init = async () => {

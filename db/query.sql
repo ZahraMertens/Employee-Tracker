@@ -23,3 +23,4 @@ LEFT JOIN employee
 ON role.role_id = employee.role_id
 LEFT JOIN department
 ON department.id = role.department_id
+WHERE department_name = ?
