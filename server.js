@@ -1,5 +1,6 @@
 const { resolveCname } = require('dns');
 const inquirer = require('inquirer');
+const { connect } = require('./config/connection');
 const connectDb = require("./config/connection")
 
 function startPrompts(){
@@ -20,6 +21,7 @@ function startPrompts(){
                     "Add a role",
                     "Add an employee",
                     "Update/Change an employee's role",
+                    "Update an employees manager",
                     "Update a roles department",
                     "Delete a department",
                     "Delete a role",
@@ -78,6 +80,10 @@ function startPrompts(){
                     if (selectedOpt === "Update a roles department"){
                         return updateRolesDepartment();
                     }
+                case "Update an employees manager":
+                    if (selectedOpt === "Update an employees manager"){
+                        return updateManager();
+                    }
                 case "Delete a department":
                     if (selectedOpt === "Delete a department"){
                         return deleteDepartment();
@@ -86,8 +92,8 @@ function startPrompts(){
                     if (selectedOpt === "Delete a role"){
                         return deleteRole();
                     }
-                case "Delete an Employee":
-                    if (selectedOpt === "Delete an Employee"){
+                case "Delete an employee":
+                    if (selectedOpt === "Delete an employee"){
                         return deleteEmployee();
                     }
             }
@@ -555,6 +561,37 @@ async function updateRolesDepartment () {
 
 }
 
+async function updateManager () {
+    let newManager = await inquirer.prompt([
+        {
+            type: "list",
+			name: "employee_name",
+			message: "Who's manager would you like to update?",
+			choices: await getEmployees()
+        }
+    ])
+
+    newManager = Object.assign(newManager, await inquirer.prompt([
+        {
+            type: "list",
+			name: "manager_name",
+			message: "Who is the new Manager of the employee?",
+			choices: await getEmployees()
+        }
+    ]))
+
+    const sql = `UPDATE employee SET manager_id = ? WHERE CONCAT(first_name, ' ', last_name) = ?`;
+    const params = [await getManagerId(newManager.manager_name), newManager.employee_name]
+
+    connectDb.query(sql, params, (err, result) => {
+        if (err){
+            console.error(err)
+        } else {
+            showUpdatedEmployee(newManager.employee_name);
+        }
+    })
+}
+
 
 
 // --------- ALL HELPER FUNCTIONS TO GET THE DATA FROM ALL 3 TABLES FOR THE VIEW, ADD & UPDATE FUNCTIONS ------//
@@ -670,6 +707,7 @@ function getRoleId(role) {
 	});
 }
 
+// -------------- ALL DELETE FUNCTIONS-----------------//
 async function deleteDepartment () {
     
     let deleteDep = await inquirer.prompt([
@@ -688,8 +726,7 @@ async function deleteDepartment () {
         if (err){
             console.error(err)
         } else {
-            //console.log(result.length)
-            console.table(result)
+            console.log("\x1b[32m", `\n-------------- The ${deleteDep.department_name} department has been removed from the database! -------------\n`)
             startPrompts();
            
         }
@@ -730,8 +767,7 @@ async function deleteRole () {
         if (err){
             console.error(err)
         } else {
-            //console.log(result.length)
-            console.table(result)
+            console.log("\x1b[32m", `\n-------------- ${deleteRole.role_title} has been removed from the database! -------------\n`)
             startPrompts();
            
         }
@@ -743,21 +779,20 @@ async function deleteEmployee () {
     let deleteEmp = await inquirer.prompt([
         {
             type: "list",
-			name: "role_title",
-			message: "Which role would you like to remove from the database?",
-			choices: await getDepartment()
+			name: "employee_name",
+			message: "Whom would you like to remove from the database?",
+			choices: await getEmployees()
         }
     ])
 
-    const sql = `DELETE FROM role WHERE role_title = ?`
-    const params = [deleteRole.role_title]
+    const sql = `DELETE FROM employee WHERE CONCAT(first_name, ' ', last_name) = ?`
+    const params = [deleteEmp.employee_name]
 
     connectDb.query(sql, params, (err, result) => {
         if (err){
             console.error(err)
         } else {
-            //console.log(result.length)
-            console.table(result)
+            console.log("\x1b[32m", `\n-------------- ${deleteEmp.employee_name} has been removed from the database! -------------\n`)
             startPrompts();
            
         }
