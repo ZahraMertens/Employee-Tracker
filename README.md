@@ -5,7 +5,7 @@
 
 ## General Information
  
-* [Walkthrough Video]()
+* [Walkthrough Video](https://drive.google.com/file/d/1qAEB6T2h2jhiww_32ZHeqQ_9pJSUJ2Jr/view?usp=sharing)
 * [GitHub repository of Employee Tracker](https://github.com/ZahraMertens/Employee-Tracker.git)
 
 
