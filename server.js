@@ -1,6 +1,4 @@
-const { resolveCname } = require('dns');
 const inquirer = require('inquirer');
-const { connect } = require('./config/connection');
 const connectDb = require("./config/connection")
 
 function startPrompts(){
@@ -17,6 +15,7 @@ function startPrompts(){
                     "View all employees assigned to a role or department",
                     "View employees by manager",
                     "View employees by department",
+                    "View the budget of department",
                     "Add a department",
                     "Add a role",
                     "Add an employee",
@@ -59,6 +58,10 @@ function startPrompts(){
                 case "View employees by department":
                     if (selectedOpt === "View employees by department"){
                         return viewEmployeesByDepartment();
+                    }
+                case "View the budget of department":
+                    if (selectedOpt === "View the budget of department"){
+                        return viewDepBudget();
                     }
                 case "Add a department":
                     if (selectedOpt === "Add a department"){
@@ -264,6 +267,32 @@ async function viewEmployeesByDepartment () {
         }
     })
 }
+
+async function viewDepBudget () {
+
+    let depBudegt = await inquirer.prompt([
+        {
+            type: "list",
+            name: "department",
+            message: "Of which department would you like to see the budget?",
+            choices: await getDepartment()
+        }
+    ])
+
+    const sql = `SELECT SUM(role_salary) AS Budget FROM role WHERE department_id = ?`
+    const param = await getDepartmentId(depBudegt.department);
+
+    connectDb.query(sql, param, (err, result) => {
+        if (err){
+            console.error(err)
+        } else {
+            console.log("\x1b[32m", `\n=========== The budget of the ${depBudegt.department} department is: ==========\n`)
+            console.table(result)
+            startPrompts();
+        }
+    })
+}
+
 
 //------------------ ALL ADD FUNCTIONS TO ADD DEPARTMENT/ROLE/EMPLOYEE ---------//
 
@@ -593,121 +622,8 @@ async function updateManager () {
 }
 
 
-
-// --------- ALL HELPER FUNCTIONS TO GET THE DATA FROM ALL 3 TABLES FOR THE VIEW, ADD & UPDATE FUNCTIONS ------//
-
-//Get employee names for prompt choices
-function getEmployees () {
-
-    const sql = "SELECT CONCAT(first_name, ' ', last_name) AS 'name' FROM employee ORDER BY employee_id, first_name;";
-
-    return new Promise((resolve) => {
-        
-        connectDb.query(sql, (err, result) => {
-            if (err) {
-            console.error(err)
-            } else {
-            resolve(result.map(employee => employee.name))
-            }
-        })
-    })
-}
-
-function getRolesByName () {
-    const sql = "SELECT role_title FROM role;";
-
-    return new Promise((resolve) => {
-		connectDb.query(sql, (err, result) => {
-			if (err) console.error(err);
-			resolve(result.map(role => role.role_title));
-		});
-	});
-}
-
-//Get all existing departments for choices
-function getDepartment () {
-    const sql = "SELECT department_name FROM department";
-
-	return new Promise((resolve) => {
-		connectDb.query(sql, (err, result) => {
-			if (err) throw err;
-			resolve(result.map(department => department.department_name));
-		});
-	});
-}
-
-async function getRoles(department) {
-
-	const sql = "SELECT role_title FROM role WHERE department_id = ? ORDER BY department_id, role_title;"
-	const params = [await getDepartmentId(department)];
-
-	return new Promise ((resolve) => {
-		connectDb.query(sql, params, (err, result) => {
-            try {
-                if (err) {
-                    throw err
-                } else if (result.length == 0) {
-                    console.log("There are no roles categorised in the department")
-                    return startPrompts();
-                } else if (result.length !== 0){
-                    resolve(result.map(role => role.role_title));
-                }
-            } catch (error){
-                console.error(error)
-            }
-		});
-       
-	});
-}
-
-//Get manager id to add an employee
-function getManagerId(manager) {
-	const sql = "SELECT employee_id FROM employee WHERE ? AND ?"
-	const params = [
-		{
-			first_name: manager.split(' ')[0]
-		},
-		{
-			last_name: manager.split(' ')[1]
-		}
-	];
-
-	return new Promise((resolve) => {
-		connectDb.query(sql, params, (err, result) => {
-			if (err) throw err;
-			resolve(result[0].employee_id);
-		});
-	});
-}
-
-//Get Department id 
-function getDepartmentId(department) {
-	const sql = "SELECT id FROM department WHERE department_name = ?";
-	const params = [department];
-
-	return new Promise ((resolve) => {
-		connectDb.query(sql, params, (err, result) => {
-			if (err) throw err;
-			resolve(result[0].id);
-            console.log(result[0].id)
-		});
-	});
-}
-
-//Get role id 
-function getRoleId(role) {
-	const sql = "SELECT role_id FROM role WHERE role_title = ?";
-	const param = [role];
-
-	return new Promise((resolve) => {
-		connectDb.query(sql, param, (err, result) => {
-			if (err) throw err;
-            resolve(result[0].role_id);
-		});
-	});
-}
-
 // -------------- ALL DELETE FUNCTIONS-----------------//
+
 async function deleteDepartment () {
     
     let deleteDep = await inquirer.prompt([
@@ -728,7 +644,6 @@ async function deleteDepartment () {
         } else {
             console.log("\x1b[32m", `\n-------------- The ${deleteDep.department_name} department has been removed from the database! -------------\n`)
             startPrompts();
-           
         }
     })
 }
@@ -799,6 +714,122 @@ async function deleteEmployee () {
     })
 }
 
+
+// --------- ALL HELPER FUNCTIONS TO GET THE DATA FROM ALL 3 TABLES FOR THE VIEW, ADD & UPDATE FUNCTIONS ------//
+
+//Get employee names for prompt choices
+function getEmployees () {
+
+    const sql = "SELECT CONCAT(first_name, ' ', last_name) AS 'name' FROM employee ORDER BY employee_id, first_name;";
+
+    return new Promise((resolve) => {
+        
+        connectDb.query(sql, (err, result) => {
+            if (err) {
+            console.error(err)
+            } else {
+            resolve(result.map(employee => employee.name))
+            }
+        })
+    })
+}
+
+function getRolesByName () {
+    const sql = "SELECT role_title FROM role;";
+
+    return new Promise((resolve) => {
+		connectDb.query(sql, (err, result) => {
+			if (err) console.error(err);
+			resolve(result.map(role => role.role_title));
+		});
+	});
+}
+
+//Get all existing departments for choices
+function getDepartment () {
+    const sql = "SELECT department_name FROM department";
+
+	return new Promise((resolve) => {
+		connectDb.query(sql, (err, result) => {
+			if (err) throw err;
+			resolve(result.map(department => department.department_name));
+		});
+	});
+}
+
+async function getRoles(department) {
+
+	const sql = "SELECT role_title FROM role WHERE department_id = ? ORDER BY department_id, role_title;"
+	const params = [await getDepartmentId(department)];
+
+	return new Promise ((resolve) => {
+		connectDb.query(sql, params, (err, result) => {
+            try {
+                if (err) {
+                    throw err
+                } else if (result.length == 0) {
+                    console.log("\x1b[31m", `\n ------- There are no roles categorised in the department ------ \n`)
+                    return startPrompts();
+                } else if (result.length !== 0){
+                    resolve(result.map(role => role.role_title));
+                }
+            } catch (error){
+                console.error(error)
+            }
+		});
+       
+	});
+}
+
+//Get manager id to add an employee
+function getManagerId(manager) {
+	const sql = "SELECT employee_id FROM employee WHERE ? AND ?"
+	const params = [
+		{
+			first_name: manager.split(' ')[0]
+		},
+		{
+			last_name: manager.split(' ')[1]
+		}
+	];
+
+	return new Promise((resolve) => {
+		connectDb.query(sql, params, (err, result) => {
+			if (err) throw err;
+			resolve(result[0].employee_id);
+		});
+	});
+}
+
+//Get Department id 
+function getDepartmentId(department) {
+	const sql = "SELECT id FROM department WHERE department_name = ?";
+	const params = [department];
+
+	return new Promise ((resolve) => {
+		connectDb.query(sql, params, (err, result) => {
+			if (err) throw err;
+			resolve(result[0].id);
+            console.log(result[0].id)
+		});
+	});
+}
+
+//Get role id 
+function getRoleId(role) {
+	const sql = "SELECT role_id FROM role WHERE role_title = ?";
+	const param = [role];
+
+	return new Promise((resolve) => {
+		connectDb.query(sql, param, (err, result) => {
+			if (err) throw err;
+            resolve(result[0].role_id);
+		});
+	});
+}
+
+
+//INNIT INQUIRER PROMPTS AND WELCOME USER
 const init = async () => {
     await console.log("\x1b[32m", "\n========================== Welcome to the Employee's Database! ==========================\n");
     startPrompts();
