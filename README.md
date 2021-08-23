@@ -35,62 +35,70 @@ The Application "Employee Tracker" is an interface Contnt Management System to i
 
 * 4️⃣ First, you MUST install the npm packages by running "npm install" in the terminal
 
-* 5️⃣ To un the application on your local device the user must run "npm start" in the terminal and will see a link such as "http://localhost:8080" if the user runs the link in the browser the application should run on the local host.
+* 5️⃣ You also have to install MySql and create an account in order to be able to interact with the database
 
-* 6️⃣ To deploy the webpage the user must login heroku in the terminal and push the application to heroku. 
-   * [To see how to deploy with Git to heroku follow the link](https://devcenter.heroku.com/articles/git)
-   * When deployed to heroku the user can go to the repository and find a button in the top right corner to open the app
+   * You then need to login to mysql on the command line and run SOURCE schema.sql and SOURCE seeds.sql to initialize the database
+
+* 6️⃣ To run the application on your local device the user must run "npm start" in the terminal and will then be prompted with the menu to be able to select from the  listed options 
 
 ## Technologies Used
 
 * JavaScript
 
-* Node.JS & Express.JS
+* Node.JS
 
-* Npm packages: Express, nodeman, util, uuid
-
-* FS (File System)
-
-* CSS & Bootstrap Framework
+* Npm packages: inquirer, mysql2 & dotenv
 
 ## User Story
 
-AS A small business owner I WANT to be able to write and save notes SO THAT I can organize my thoughts and keep track of tasks I need to complete
+AS A business owner I WANT to be able to view and manage the departments, roles, and employees in my company SO THAT I can organize and plan my business
 
 ## Actual Behaviour
 
-* WHEN I open the Note Taker THEN I am presented with a landing page with a link to a notes page
+* WHEN I start the application THEN I am presented with the following options: view all departments, view all roles, view all employees, add a department, add a role, add an employee, and update an employee role
 
-* WHEN I click on the link to the notes page THEN I am presented with a page with existing notes listed in the left-hand column, plus empty fields to enter a new note title and the note’s text in the right-hand column
+* WHEN I choose to view all departments THEN I am presented with a formatted table showing department names and department ids
 
-* WHEN I enter a new note title and the note’s text
-THEN a Save icon appears in the navigation at the top of the page
+* WHEN I choose to view all roles THEN I am presented with the job title, role id, the department that role belongs to, and the salary for that role
 
-* WHEN I click on the Save icon THEN the new note I have entered is saved and appears in the left-hand column with the other existing notes
+* WHEN I choose to view all employees THEN I am presented with a formatted table showing employee data, including employee ids, first names, last names, job titles departments, salaries, and managers that the employees report to
 
-* WHEN I click on an existing note in the list in the left-hand column THEN that note appears in the right-hand column
+* WHEN I choose to add a department THEN I am prompted to enter the name of the department and that department is added to the database
 
-* WHEN I click on the Write icon in the navigation at the top of the page THEN I am presented with empty fields to enter a new note title and the note’s text in the right-hand column
+* WHEN I choose to add a role THEN I am prompted to enter the name, salary, and department for the role and that role is added to the database
+
+* WHEN I choose to add an employee THEN I am prompted to enter the employee’s first name, last name, role, and manager, and that employee is added to the database
+
+* WHEN I choose to update an employee role THEN I am prompted to select an employee to update and their new role and this information is updated in the database
 
 
 ## Bonus
 
-* 🏆 WHEN I press the 🗑️-Button then the note is deleted from the webpage and the database
+* 🏆 WHEN I select 'view employees by manager" I am able to select an employee by name and THEN select a new manager for the selecte  employee
+
+* WHEN I select 'View employees by department' in the menu THEN I can select a department and will see a table with all employees in this department
+
+* WHEN I select 'View the budget of the department' I can select a department and will se a abel with the sum of all salaries of roles assigned to this department
+
+* WHEN I select 'Update an employees manager' I can select an employee and select the manager for this employee
+
+* WHEN I select any of the "delete" options the I can delete an employee, a role or department from the database
 
 ## Mock-Up
 
-🎥 The GIF shows the Landing page and the note page where the user is able to save and delete notes:
+🎥 The GIF shows the command line application and the functionality:
 
-![Code-Demo](./assets/note.gif)
+![Code-Demo](./assets/empTracker.gif)
 
 ## Credits
 
 * https://ezgif.com/crop/ezgif-3-e35ddab000ce.gif
-* https://github.com/tchapi/markdown-cheatsheet/blob/master/README.md
-* https://devcenter.heroku.com/articles/git
-* https://www.youtube.com/watch?v=L72fhGm1tfE&t=811s
-* https://openclassrooms.com/en/courses/5614116-go-full-stack-with-node-js-express-and-mongodb/5656256-complete-the-crud-with-update-and-delete
-* https://channel9.msdn.com/Series/Beginners-Series-to-NodeJS/How-to-create-update-and-delete-APIs-with-Nodejs-and-Express-21-of-26
+* https://www.geeksforgeeks.org/check-if-an-array-is-empty-or-not-in-javascript/
+* https://stackoverflow.com/questions/57321266/how-to-test-inquirer-validation
+* https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch
+* https://www.w3schools.com/sql/sql_intro.asp
+* https://dev.mysql.com/doc/
 
 
-© 2021 Zahra Mertens, Note-Taker
+
+© 2021 Zahra Mertens, Employee-Tracker

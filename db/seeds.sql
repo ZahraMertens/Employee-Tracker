@@ -1,8 +1,53 @@
 INSERT INTO department (department_name)
-VALUES ("CEO");
+VALUES ("Management"),
+       ("Marketing"),
+       ("Web Development"),
+       ("Engineering"),
+       ("Sales"),
+       ("Human Resources"),
+       ("Finance"),
+       ("Operations");
 
 INSERT INTO role (role_title, role_salary, department_id)
-VALUES ("Manager", 100000, 1);
+VALUES ("CEO", 900000, 1),
+       ("Campaign Manager", 90000, 2),
+       ("Market Researcher", 80000, 2),
+       ("Content Creator", 65000, 2),
+       ("Junior Developer", 60000, 3),
+       ("Senior Developer", 100000, 3),
+       ("Frontend Developer", 95000, 3),
+       ("Backend Developer", 95000, 3),
+       ("Project Manager", 99000, 4),
+       ("Computer Engineer", 110000, 4),
+       ("Account Executive", 90000, 5),
+       ("Sales Specialist", 120000, 5),
+       ("HR Manager", 300000, 6),
+       ("Recruiter", 200000, 6),
+       ("Fund Analyst", 300000, 7),
+       ("Finance Manager", 100000, 7),
+       ("Operations Coordinator", 90000, 8),
+       ("Operations Manager", 200000, 8);
 
 INSERT INTO employee (first_name, last_name, role_id, manager_id)
-VALUES ("George", "Wilson", 1, 1);
+VALUES ("George", "Wilson", 1, 1),
+       ("Alfred", "Holmes", 2, 1),
+       ("Mona", "Swanson", 3, 2),
+       ("Lisa", "Evans", 4, 2),
+       ("Nathan", "Reid", 4, 2),
+       ("Lucas", "Richardson", 5, 7),
+       ("Christopher", "Johnson", 6, 1),
+       ("Nate", "Davies", 7, 7),
+       ("Trend", "Robinson", 8, 7),
+       ("Bradley", "Lewis", 9, 1),
+       ("Sarah", "Chapman", 10, 10),
+       ("Georgia", "Carter", 11, 1),
+       ("Paige", "Hayes", 12, 12),
+       ("Lily", "Cooke", 13, 1),
+       ("Holly", "Mitchell", 14, 14),
+       ("Tiana", "Morris", 15, 17),
+       ("James", "Harris", 16, 1),
+       ("Eden", "Armstrong", 17, 19),
+       ("Sia", "Bexter", 18, 1),
+       ("Millie", "Kennedy", 15, 17),
+       ("Tiana", "Hollis", 14, 14),
+       ("William", "Smith", 15, 7);

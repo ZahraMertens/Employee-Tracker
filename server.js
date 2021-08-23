@@ -24,7 +24,8 @@ function startPrompts(){
                     "Update a roles department",
                     "Delete a department",
                     "Delete a role",
-                    "Delete an employee"
+                    "Delete an employee",
+                    "Exit"
                 ]
             }
         ])
@@ -98,6 +99,11 @@ function startPrompts(){
                 case "Delete an employee":
                     if (selectedOpt === "Delete an employee"){
                         return deleteEmployee();
+                    }
+                case "Exit":
+                    if (selectedOpt === "Exit"){ //Exit the application
+                        console.log("\x1b[36m", `\n====================Thank you for using the Employee Tracker! BYE !!!===================\n`)
+                        return process.exit();
                     }
             }
         })
@@ -299,33 +305,14 @@ async function viewDepBudget () {
 const addDepartment = function () {
     inquirer.prompt([
         {
-            type: "text",
+            type: "input",
             message: "What is the name of the department?",
-            name: "addDepartment"//,
-            // validate: function (input) {   //other way: checkExistingDepartment
+            name: "addDepartment"
 
-            //     var done = this.async()
-
-            //     setTimeout(function() {
-
-            //         connectDb.query(`SELECT id FROM department WHERE department_name = '${input}'`, (err, result) => {
-            //             if (err){
-            //                 console.error(err)
-            //             } else {
-            //                 //console.log(result)
-            //                 //console.log(result.length)
-            //                 if (result.length !== 0){ //If the department exists result is a Row Data Obejct and....
-            //                     done('Already exists');//...If the department does not exist it is an empty array
-            //                     return;
-            //                 }
-            //             }
-            //         })
-            //         done(true);
-            //     }, 5000);
-            //}
         }
     ])
     .then(function(data){
+
         const param = data.addDepartment
         const sql = `INSERT INTO department (department_name) VALUES (?)`
 
@@ -338,47 +325,11 @@ const addDepartment = function () {
             }
         });
     })
+    // .catch((error) => {
+    //     console.log("already exists")
+    //     startPrompts()
+    // })
 }
-
-// // Check if department exists
-// async function checkExistingDepartment (input) {
-
-//     const sql = `SELECT id FROM department WHERE department_name = ?`;
-//     const param = [input]
-
-//     connectDb.query(sql, param, (err, result) => {
-//         if (err) {
-//              console.error(err)
-//         } else {
-//            //console.log(result)
-//            if (result.length !== 0){
-//                console.log("\x1b[31m", `\n\n -------${param} already exists! Please try again!-------\n`)
-//                return startPrompts()
-//             }
-//         }
-        
-//     })
-//    return true
-// }
-// async function checkExistingDepartment (input) {
-
-//     const sql = `SELECT id FROM department WHERE department_name = ?`;
-//     const param = [input]
-
-//     connectDb.query(sql, param, (err, result) => {
-//         if (err) {
-//              console.error(err)
-//         } else {
-//            //console.log(result)
-//            if (result.length !== 0){
-//                console.log("\x1b[31m", `\n\n -------${param} already exists! Please try again!-------\n`)
-//                return startPrompts();
-//             } 
-//         }
-        
-//     })
-//     return true
-// }
 
 async function addRole () {
     const newRole = await inquirer.prompt([
