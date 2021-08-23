@@ -111,7 +111,7 @@ function startPrompts(){
 
 //------------------ ALL VIEW FUNCTIONS TO SEE TABLE OF DEPARTMENT/ROLE/EMPLOYEE ---------//
 const viewDepartment = function () {
-    const sql = "SELECT * FROM department";
+    const sql = "SELECT * FROM department ORDER BY id";
 
     connectDb.query(sql, (err, result) => {
      if (err) {
@@ -124,7 +124,7 @@ const viewDepartment = function () {
 }
 
 function viewRoles (){
-    const sql = `SELECT * FROM role`;
+    const sql = `SELECT * FROM role ORDER BY role_id`;
 
     connectDb.query(sql, (err, result) => {
      if (err) {
@@ -307,8 +307,14 @@ const addDepartment = function () {
         {
             type: "input",
             message: "What is the name of the department?",
-            name: "addDepartment"
-
+            name: "addDepartment",
+            validate: function (input) {  //Regex to validate that department only conatins letters and spaces
+                if (!/^[A-Za-z\s]*$/.test(input)){
+                    return "Department name can't contain special characters or numbers!"
+                
+                }
+                return true
+            } 
         }
     ])
     .then(function(data){
@@ -318,17 +324,14 @@ const addDepartment = function () {
 
         connectDb.query(sql, [param], (err, result) => {
             if (err) {
-                console.error(err)
+                console.log("\x1b[31m", `\n -----------------------The ${param} department already exists! Please try something else ------------------\n`)
+                startPrompts()
             } else {
-                console.log("\x1b[33m", `\n------  ${param} has been added to the department table ------\n`);
+                console.log("\x1b[33m", `\n------  ${param} has successfuly been added to the department table ------\n`);
                 viewDepartment();
             }
-        });
+        });  
     })
-    // .catch((error) => {
-    //     console.log("already exists")
-    //     startPrompts()
-    // })
 }
 
 async function addRole () {
@@ -342,22 +345,33 @@ async function addRole () {
         {
             type: "input",
             message: "What is the role title?",
-            name: "role_title"//,
-            //validate: checkExistingRole
+            name: "role_title",
+            validate: function (input) {  //Regex to validate that the title only conatins letters and spaces
+                if (!/^[A-Za-z\s]*$/.test(input)){
+                    return "Role title can't contain special characters or numbers!"
+                
+                }
+                return true
+            } 
         },
         {
             type: "input",
             message: "What is the salary for the role?",
-            name: "role_salary"
+            name: "role_salary",
+            validate: function (input) { //Regex to validate that the input is a number
+                if (!/^[0-9]*$/.test(input)){
+                    return "The input is not valid"
+
+                }
+                return true
+            } 
         }
     ])
 
-    // const roleTitle = newRole.role_title;
     const sql = `INSERT INTO role SET ?`;
-
     const params = [
         {
-            role_title: newRole.role_title, 
+            role_title: newRole.role_title,
             role_salary: newRole.role_salary, 
             department_id: await getDepartmentId(newRole.department)
         }
@@ -365,7 +379,8 @@ async function addRole () {
                 
     connectDb.query(sql, params, (err, result) => {
         if (err) {
-            console.error(err)
+            console.log("\x1b[31m", `\n -----------------------The role '${newRole.role_title}' already exists! Please try something else ------------------\n`)
+            startPrompts()
         } else {
             viewNewRole(newRole.role_title)
         }
@@ -397,11 +412,25 @@ const addEmployee = async function () {
             type: "text",
             message: "What is the eomplyees first name?",
             name: "first_name",
+            validate: function (input) {  //Regex to validate that the name only conatins letters and spaces
+                if (!/^[A-Za-z\s]*$/.test(input)){
+                    return "Name can't contain special characters or numbers!"
+                
+                }
+                return true
+            } 
         },
         {
             type: "text",
             message: "What is the employees last name?",
             name: "last_name",
+            validate: function (input) {  //Regex to validate that the name only conatins letters and spaces
+                if (!/^[A-Za-z\s]*$/.test(input)){
+                    return "Name can't contain special characters or numbers!"
+                
+                }
+                return true
+            } 
         },
         {
             type: "list",
@@ -615,14 +644,7 @@ async function deleteRole () {
 			type: "list",
 			name: "role_title",
 			message: "Which role would you like to remove from the database?",
-			choices: await getRoles(deleteRole.department)//, 
-            // validate: function (input) {
-            //     let value = this.choices.filter(undefined)
-            //     if (input == value){
-            //         return startPrompts();
-            //     } 
-            //     return true
-            // }
+			choices: await getRoles(deleteRole.department)
 		}
     ]));
 
@@ -635,7 +657,6 @@ async function deleteRole () {
         } else {
             console.log("\x1b[32m", `\n-------------- ${deleteRole.role_title} has been removed from the database! -------------\n`)
             startPrompts();
-           
         }
     })
 }
